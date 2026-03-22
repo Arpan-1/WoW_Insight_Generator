@@ -464,17 +464,33 @@ with tab2:
 
             col_date1, col_date2 = st.columns(2)
             with col_date1:
-                date_w1 = st.date_input(
-                    f"Week 1 Date Range Start — {section}",
+                range_w1 = st.date_input(
+                    f"Week 1 Date Range — {section}",
+                    value=[],
                     key=f"date_w1_{section}",
-                    help="Start date of Week 1"
+                    help="Select the start and end date of Week 1"
                 )
             with col_date2:
-                date_w2 = st.date_input(
-                    f"Week 2 Date Range Start — {section}",
+                range_w2 = st.date_input(
+                    f"Week 2 Date Range — {section}",
+                    value=[],
                     key=f"date_w2_{section}",
-                    help="Start date of Week 2"
+                    help="Select the start and end date of Week 2"
                 )
+
+            # Format ranges safely — handle partial selection
+            def fmt_range(r):
+                if isinstance(r, (list, tuple)) and len(r) == 2:
+                    return r[0].strftime("%d %b %Y"), r[1].strftime("%d %b %Y")
+                elif isinstance(r, (list, tuple)) and len(r) == 1:
+                    return r[0].strftime("%d %b %Y"), r[0].strftime("%d %b %Y")
+                else:
+                    return "N/A", "N/A"
+
+            w1_start, w1_end = fmt_range(range_w1)
+            w2_start, w2_end = fmt_range(range_w2)
+            date_w1 = f"{w1_start} – {w1_end}"
+            date_w2 = f"{w2_start} – {w2_end}"
 
             col1, col2 = st.columns(2)
             with col1:
@@ -505,8 +521,8 @@ with tab2:
             stage2_inputs[section] = {
                 "product_traffic": prod_traffic,
                 "product_orders": prod_orders,
-                "date_w1": date_w1.strftime("%d %b %Y"),
-                "date_w2": date_w2.strftime("%d %b %Y"),
+                "date_w1": date_w1,
+                "date_w2": date_w2,
                 "gsc": {
                     "clicks_w1": clicks_w1, "clicks_w2": clicks_w2,
                     "impressions_w1": imp_w1, "impressions_w2": imp_w2,
