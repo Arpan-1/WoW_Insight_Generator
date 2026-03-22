@@ -159,7 +159,7 @@ html, body, [class*="css"] {
 .section-name {
     font-size: 1.4rem;
     font-weight: 700;
-    color: #0d0d0d;
+    color: #FFFFFF;
 }
 
 /* ── News Cards ── */
