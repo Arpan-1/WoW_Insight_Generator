@@ -7,7 +7,7 @@ import streamlit as st
 import pandas as pd
 from stage1 import calculate_wow_changes, format_pct
 from stage2 import run_stage2
-from utils import fmt_pct, fmt_number, pct_color_class, summarise_gsc
+from utils import fmt_pct, fmt_number, pct_color_class, summarise_gsc, conversion_rate
 
 # ── Page Config ───────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -21,6 +21,7 @@ st.set_page_config(
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
 html, body, [class*="css"] {
     font-family: 'Space Grotesk', sans-serif;
 }
@@ -336,14 +337,19 @@ with tab1:
         # Summary table
         table_rows = []
         for section, r in results.items():
+            cvr_w1 = r.get("week1_cvr")
+            cvr_w2 = r.get("week2_cvr")
             table_rows.append({
-                "Section": section,
-                "Traffic W1": fmt_number(r["week1_traffic"]),
-                "Traffic W2": fmt_number(r["week2_traffic"]),
-                "Traffic Δ%": fmt_pct(r["traffic_change_pct"]),
-                "Orders W1": fmt_number(r["week1_orders"]),
-                "Orders W2": fmt_number(r["week2_orders"]),
-                "Orders Δ%": fmt_pct(r["orders_change_pct"]),
+                "Section":      section,
+                "Traffic W1":   fmt_number(r["week1_traffic"]),
+                "Traffic W2":   fmt_number(r["week2_traffic"]),
+                "Traffic Δ%":   fmt_pct(r["traffic_change_pct"]),
+                "Orders W1":    fmt_number(r["week1_orders"]),
+                "Orders W2":    fmt_number(r["week2_orders"]),
+                "Orders Δ%":    fmt_pct(r["orders_change_pct"]),
+                "CVR W1":       f"{cvr_w1:.2f}%" if cvr_w1 is not None else "N/A",
+                "CVR W2":       f"{cvr_w2:.2f}%" if cvr_w2 is not None else "N/A",
+                "CVR Δ%":       fmt_pct(r.get("cvr_change_pct")),
             })
 
         df = pd.DataFrame(table_rows).set_index("Section")
@@ -360,11 +366,16 @@ with tab1:
 
             t_pct = r["traffic_change_pct"]
             o_pct = r["orders_change_pct"]
+            c_pct = r.get("cvr_change_pct")
+            cvr_w1 = r.get("week1_cvr")
+            cvr_w2 = r.get("week2_cvr")
 
             t_label = fmt_pct(t_pct)
             o_label = fmt_pct(o_pct)
+            c_label = fmt_pct(c_pct)
             t_cls = pct_color_class(t_pct)
             o_cls = pct_color_class(o_pct)
+            c_cls = pct_color_class(c_pct)
 
             st.markdown(f"""
             <div class="metric-row">
@@ -393,6 +404,29 @@ with tab1:
                     <div class="metric-label">Orders Change</div>
                     <div class="metric-value" style="font-size:1.3rem;">—</div>
                     <div class="{o_cls}">{o_label}</div>
+                </div>
+            </div>
+            <div class="metric-row" style="margin-top:12px;">
+                <div class="metric-box">
+                    <div class="metric-label">Conv. Rate — W1</div>
+                    <div class="metric-value" style="font-size:1.4rem;">{f"{cvr_w1:.2f}%" if cvr_w1 is not None else "N/A"}</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-label">Conv. Rate — W2</div>
+                    <div class="metric-value" style="font-size:1.4rem;">{f"{cvr_w2:.2f}%" if cvr_w2 is not None else "N/A"}</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-label">CVR Change</div>
+                    <div class="metric-value" style="font-size:1.3rem;">—</div>
+                    <div class="{c_cls}">{c_label}</div>
+                </div>
+                <div class="metric-box" style="flex:3; background:#f0f4ff; border-color:#c7d7fe;">
+                    <div class="metric-label">CVR Formula</div>
+                    <div style="font-size:0.82rem; color:#374151; margin-top:4px; font-family:'DM Mono',monospace;">
+                        CVR = (Orders ÷ Traffic) × 100<br>
+                        W1: {fmt_number(r['week1_orders'])} ÷ {fmt_number(r['week1_traffic'])} = {f"{cvr_w1:.2f}%" if cvr_w1 is not None else "N/A"}<br>
+                        W2: {fmt_number(r['week2_orders'])} ÷ {fmt_number(r['week2_traffic'])} = {f"{cvr_w2:.2f}%" if cvr_w2 is not None else "N/A"}
+                    </div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
@@ -428,6 +462,20 @@ with tab2:
             </div>
             """, unsafe_allow_html=True)
 
+            col_date1, col_date2 = st.columns(2)
+            with col_date1:
+                date_w1 = st.date_input(
+                    f"Week 1 Date Range Start — {section}",
+                    key=f"date_w1_{section}",
+                    help="Start date of Week 1"
+                )
+            with col_date2:
+                date_w2 = st.date_input(
+                    f"Week 2 Date Range Start — {section}",
+                    key=f"date_w2_{section}",
+                    help="Start date of Week 2"
+                )
+
             col1, col2 = st.columns(2)
             with col1:
                 prod_traffic = st.text_input(
@@ -457,6 +505,8 @@ with tab2:
             stage2_inputs[section] = {
                 "product_traffic": prod_traffic,
                 "product_orders": prod_orders,
+                "date_w1": date_w1.strftime("%d %b %Y"),
+                "date_w2": date_w2.strftime("%d %b %Y"),
                 "gsc": {
                     "clicks_w1": clicks_w1, "clicks_w2": clicks_w2,
                     "impressions_w1": imp_w1, "impressions_w2": imp_w2,
@@ -488,6 +538,8 @@ with tab2:
                             section=section,
                             product_traffic=inp["product_traffic"] or f"{section} top product",
                             product_orders=inp["product_orders"] or f"{section} top product",
+                            date_w1=inp["date_w1"],
+                            date_w2=inp["date_w2"],
                             gsc_metrics=inp["gsc"],
                             wow_changes=wow,
                             serpapi_key=serpapi_key,

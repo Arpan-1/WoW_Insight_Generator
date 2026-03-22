@@ -84,6 +84,8 @@ def synthesize_reasons(
     section: str,
     product_traffic: str,
     product_orders: str,
+    date_w1: str,
+    date_w2: str,
     gsc_metrics: dict,
     wow_changes: dict,
     price_data_traffic: list,
@@ -102,9 +104,16 @@ def synthesize_reasons(
     prompt = f"""
 You are a senior digital analytics consultant analysing Week-on-Week (WoW) performance changes for Telstra.com's "{section}" section.
 
+## Reporting Period
+- Week 1 starting: {date_w1}
+- Week 2 starting: {date_w2}
+
 ## WoW Performance Summary
 - Traffic Change: {wow_changes.get('traffic_change_pct', 'N/A'):.2f}% (W1: {wow_changes.get('week1_traffic')} → W2: {wow_changes.get('week2_traffic')})
 - Orders Change: {wow_changes.get('orders_change_pct', 'N/A'):.2f}% (W1: {wow_changes.get('week1_orders')} → W2: {wow_changes.get('week2_orders')})
+- Conversion Rate W1: {f"{wow_changes.get('week1_cvr'):.2f}%" if wow_changes.get('week1_cvr') else 'N/A'}
+- Conversion Rate W2: {f"{wow_changes.get('week2_cvr'):.2f}%" if wow_changes.get('week2_cvr') else 'N/A'}
+- CVR Change: {f"{wow_changes.get('cvr_change_pct'):.2f}%" if wow_changes.get('cvr_change_pct') else 'N/A'}
 
 ## Google Search Console Metrics
 - Clicks W1→W2: {gsc_metrics.get('clicks_w1')} → {gsc_metrics.get('clicks_w2')}
@@ -132,19 +141,19 @@ You are a senior digital analytics consultant analysing Week-on-Week (WoW) perfo
 Please write a structured analysis report with the following sections:
 
 ### 1. Executive Summary
-2-3 sentences summarising the WoW shift.
+2-3 sentences summarising the WoW shift for the period {date_w1} vs {date_w2}.
 
 ### 2. Traffic Analysis
 Explain the traffic change. Connect GSC metrics (clicks, impressions, keywords) to the traffic movement. Identify whether organic search is driving or limiting traffic.
 
-### 3. Orders Analysis
-Explain the order change. Is it conversion-driven or traffic-driven?
+### 3. Orders & Conversion Analysis
+Explain the order change. Analyse the conversion rate shift — did more or fewer visitors convert? Is the change driven by traffic volume or conversion efficiency?
 
 ### 4. Price & Competitive Intelligence
 Based on the price comparison data, assess whether pricing differences or promotions on Telstra.com vs competitors could explain the change. Be specific about price gaps found.
 
 ### 5. News & Market Context
-Summarise relevant news. Did any product launch, deal, announcement, or external event likely influence the WoW change?
+Summarise relevant news. Did any product launch, deal, announcement, or external event likely influence the WoW change during this period?
 
 ### 6. Root Cause Assessment
 Provide a prioritised list of likely root causes (most likely first) with confidence level (High / Medium / Low).
@@ -170,6 +179,8 @@ def run_stage2(
     section: str,
     product_traffic: str,
     product_orders: str,
+    date_w1: str,
+    date_w2: str,
     gsc_metrics: dict,
     wow_changes: dict,
     serpapi_key: str,
@@ -192,6 +203,8 @@ def run_stage2(
         section=section,
         product_traffic=product_traffic,
         product_orders=product_orders,
+        date_w1=date_w1,
+        date_w2=date_w2,
         gsc_metrics=gsc_metrics,
         wow_changes=wow_changes,
         price_data_traffic=price_traffic,

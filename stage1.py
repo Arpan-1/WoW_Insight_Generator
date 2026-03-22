@@ -3,7 +3,7 @@ Stage 1: Week-on-Week Percentage Change Calculator
 Computes traffic and order changes for each section.
 """
 
-from utils import safe_pct_change, fmt_pct
+from utils import safe_pct_change, fmt_pct, conversion_rate
 
 
 def calculate_wow_changes(sections_data: dict) -> dict:
@@ -22,6 +22,9 @@ def calculate_wow_changes(sections_data: dict) -> dict:
         w1 = data["week1"]
         w2 = data["week2"]
 
+        cvr_w1 = conversion_rate(w1["orders"], w1["traffic"])
+        cvr_w2 = conversion_rate(w2["orders"], w2["traffic"])
+
         results[section] = {
             "week1_traffic":       w1["traffic"],
             "week2_traffic":       w2["traffic"],
@@ -29,6 +32,9 @@ def calculate_wow_changes(sections_data: dict) -> dict:
             "week1_orders":        w1["orders"],
             "week2_orders":        w2["orders"],
             "orders_change_pct":   safe_pct_change(w1["orders"], w2["orders"]),
+            "week1_cvr":           cvr_w1,
+            "week2_cvr":           cvr_w2,
+            "cvr_change_pct":      safe_pct_change(cvr_w1, cvr_w2) if (cvr_w1 and cvr_w2) else None,
         }
 
     return results

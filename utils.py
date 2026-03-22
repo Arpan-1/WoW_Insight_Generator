@@ -33,6 +33,16 @@ def safe_pct_change(old: int | float, new: int | float) -> float | None:
     return ((new - old) / old) * 100
 
 
+def conversion_rate(orders: int | float, traffic: int | float) -> float | None:
+    """
+    Conversion rate = (orders / traffic) * 100
+    Returns None if traffic is 0.
+    """
+    if traffic == 0:
+        return None
+    return (orders / traffic) * 100
+
+
 def summarise_gsc(gsc: dict) -> dict:
     """
     Compute WoW % changes for GSC metrics.
